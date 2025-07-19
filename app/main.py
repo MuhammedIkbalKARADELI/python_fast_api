@@ -17,4 +17,4 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 @app.get("/status")
 async def status():
-    return {"Message" : "Ok"}
+    return {"Message" : "OK"}
