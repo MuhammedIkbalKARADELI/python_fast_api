@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # host:container → doğru eşleştirme
+    environment:
+      POSTGRES_USER: "fast_api_user"
+      POSTGRES_PASSWORD: "fast_api_password"
+      POSTGRES_DB: "fast_api_db"
+
+volumes:
+  postgres_data:
