@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from fastapi import FastAPI
 from app.db import get_db_connection
 from app.student import Student, StudentCreate
@@ -22,7 +22,7 @@ async def status():
     return {"Message" : "OK"}
 
 
-@app.post("/student/", response_model=Student)
+@app.post("/students/", response_model=Student)
 def create_student(student: StudentCreate):
     conn, cursor = get_db_connection()
     try:
@@ -61,4 +61,62 @@ def create_student(student: StudentCreate):
             conn.close()
         except Exception:
             pass
+
+
+@app.get("/students/", response_model=List[Student])
+def get_all_students():
+    students = []
+    conn, cursor = get_db_connection()
+    try:
+        cursor.execute("SELECT * FROM Students;")
+        rows = cursor.fetchall()
+        for row in rows:
+           students.append(row) 
+        cursor.close()
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, details=str(e))
+    
+    conn.close()
+    if students:
+        return students
+    raise HTTPException(status_code=400, details="Student not found!")
+
+
+@app.get("/student/{student_id}")
+def get_one_student(student_id):
+
+    students = []
+    conn, cursor = get_db_connection()
+    try:
+        cursor.execute("SELECT * FROM Students WHERE id = %s;", (student_id))
+        rows = cursor.fetchall()
+        for row in rows:
+           students.append(row) 
+        cursor.close()
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, details=str(e))
+    
+    conn.close()
+    if students:
+        return students
+    raise HTTPException(status_code=400, details="Student not existed!")
+
+
+@app.delete("/student/{student_id}")
+def delete_student(student_id):
+    conn, cursor = get_db_connection()
+
+    try:
+        cursor.execute("DELETS FROM Students WHERE id = %s;", (student_id))
+        conn.commit()
+        cursor.close()
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, details=str(e))
+    
+    conn.close()
+    return {"message":"Student deleted succesfully!"}
+
 

@@ -1,4 +1,12 @@
 services:
+  web:
+    build: .
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app'
+    volumes: 
+    - .:/app
+    ports:
+      - 8080:8080
+
   db:
     image: postgres
     volumes:
