@@ -1,6 +1,8 @@
 from typing import Union
-
 from fastapi import FastAPI
+from app.db import get_db_connection
+from app.student import Student, StudentCreate
+from http.client import HTTPException
 
 app = FastAPI()
 
@@ -18,3 +20,45 @@ def read_item(item_id: int, q: Union[str, None] = None):
 @app.get("/status")
 async def status():
     return {"Message" : "OK"}
+
+
+@app.post("/student/", response_model=Student)
+def create_student(student: StudentCreate):
+    conn, cursor = get_db_connection()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO students (first_name, last_name)
+            VALUES (%s, %s)
+            RETURNING id, first_name, last_name
+            """,
+            (student.first_name, student.last_name),
+        )
+        row = cursor.fetchone()  # tuple veya dict olabilir
+
+        # RealDictCursor kullanmıyorsan tuple'ı dict'e çevir
+        if isinstance(row, dict):
+            data = row
+        else:
+            colnames = [d[0] for d in cursor.description]
+            data = dict(zip(colnames, row))
+
+        conn.commit()
+        return data  # response_model=Student bunu doğrular
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        # FastAPI HTTPException kwargs kabul eder
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
